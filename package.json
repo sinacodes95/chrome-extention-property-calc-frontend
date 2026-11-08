@@ -1,0 +1,12 @@
+{
+  "name": "property-desk-calc-extension",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "test": "node --test",
+    "package": "node scripts/package.mjs"
+  }
+}

@@ -1,0 +1,227 @@
+.tool-pane-grid {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+}
+
+.tool-pane-grid > * {
+  min-width: 0;
+}
+
+@media (min-width: 660px) {
+  .tool-pane-grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  }
+}
+
+.scientific-form .scientific-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.scientific-display {
+  padding: 4px 10px 7px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--tint);
+  font-variant-numeric: tabular-nums;
+}
+
+.scientific-display input {
+  width: 100%;
+  min-height: 34px;
+  padding: 4px 5px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.925rem;
+}
+
+.scientific-output {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 36px;
+  padding-inline: 5px;
+}
+
+.scientific-output output {
+  min-width: 0;
+  color: var(--ink);
+  font-size: clamp(1.125rem, 4vw, 1.625rem);
+  font-weight: 650;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.scientific-output .scientific-reuse {
+  min-height: 29px;
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.scientific-keys {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.scientific-keys button[data-token], .scientific-quick button {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+  cursor: pointer;
+}
+
+.scientific-keys button[data-token] {
+  min-width: 0;
+  min-height: 36px;
+  padding: 3px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.scientific-keys button[data-token][aria-label] {
+  background: var(--tint);
+}
+
+.scientific-keys button[data-token]:hover, .scientific-quick button:hover {
+  border-color: var(--accent);
+}
+
+.scientific-keys .scientific-equals {
+  grid-column: span 2;
+  min-width: 0;
+  min-height: 36px;
+  padding: 2px;
+  font-size: 1.125rem;
+}
+
+.scientific-keys-help {
+  margin: 9px 0 0;
+  text-align: right;
+}
+
+.scientific-keys-help kbd {
+  padding: 1px 3px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.7rem;
+}
+
+.scientific-reference h2, .finance-grid h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.scientific-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0;
+}
+
+.scientific-quick button {
+  min-width: 33px;
+  min-height: 32px;
+  padding: 3px 8px;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+}
+
+.scientific-more {
+  border-top: 1px solid var(--border);
+}
+
+.scientific-more summary {
+  padding: 10px 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.scientific-more:last-child:not([open]) summary {
+  padding-bottom: 0;
+}
+
+.scientific-more ul {
+  margin: 0;
+  padding-inline-start: 16px;
+}
+
+.scientific-more li + li {
+  margin-top: 5px;
+}
+
+.scientific-function-group h3 {
+  margin: 5px 0 0;
+  font-size: 0.8125rem;
+}
+
+.scientific-function-group .scientific-quick {
+  margin: 5px 0 12px;
+}
+
+.finance-nav {
+  margin-bottom: 14px;
+}
+
+.finance-help, .finance-state {
+  margin: 5px 0 0;
+}
+
+.finance-inputs form {
+  margin-top: 14px;
+}
+
+.finance-inputs .form-actions {
+  margin-top: 14px;
+}
+
+#finance-cash-form > .field + .field {
+  margin-top: 12px;
+}
+
+#finance-cash-form textarea {
+  min-height: 90px;
+  resize: vertical;
+  font-variant-numeric: tabular-nums;
+}
+
+.finance-inputs .field-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 138px), 1fr));
+}
+
+.finance-grid .finance-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 12px 0 0;
+}
+
+.finance-primary-metric {
+  grid-column: 1 / -1;
+}
+
+.finance-metrics .metric-value {
+  margin-inline-start: 0;
+  overflow-wrap: anywhere;
+}
+
+.finance-currency {
+  margin: 12px 0 0;
+}
+
+.scientific-form .status-error, .finance-results .status-error {
+  margin-top: 8px;
+}
