@@ -36,12 +36,12 @@ function parseCashFlows(value) {
 }
 
 function formatAmount(value) {
-  if (!Number.isFinite(value)) throw new Error('The API returned an invalid amount.');
+  if (!Number.isFinite(value)) throw new Error('The calculator engine returned an invalid amount.');
   return Math.abs(value) >= 1e15 ? value.toExponential(4) : amountFormatter.format(value);
 }
 
 function formatRate(value) {
-  if (!Number.isFinite(value)) throw new Error('The API returned an invalid rate.');
+  if (!Number.isFinite(value)) throw new Error('The calculator engine returned an invalid rate.');
   if (Math.abs(value) >= 1e13) {
     const [mantissa, exponent] = value.toExponential(4).split('e');
     return `${mantissa}e+${Number(exponent) + 2}%`;

@@ -309,7 +309,7 @@ function validateResult(request, result) {
           (scenario?.ok === true && Number.isFinite(scenario.result?.gross_sale_price)));
       break;
   }
-  if (!valid) throw new Error('The API did not return the expected property results.');
+  if (!valid) throw new Error('The calculator engine did not return the expected property results.');
   return result;
 }
 

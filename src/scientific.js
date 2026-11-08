@@ -194,7 +194,7 @@ export function mountScientific(root, { calculate, loadDraft, saveDraft }) {
     try {
       const response = await calculate({ operation: 'evaluate', expression: input, angle_mode: angleMode });
       if (current !== revision) return;
-      if (!Number.isFinite(response.value)) throw new Error('The API did not return a numeric result.');
+      if (!Number.isFinite(response.value)) throw new Error('The calculator engine did not return a numeric result.');
       lastValue = response.value;
       result.textContent = formatResult(lastValue);
       reuse.hidden = false;

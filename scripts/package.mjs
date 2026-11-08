@@ -1,24 +1,25 @@
-import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, renameSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, renameSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { buildExtension, DIST } from "./build.mjs";
 
-const root = fileURLToPath(new URL('../', import.meta.url));
-const dist = join(root, 'dist');
-const files = [
-  'manifest.json', 'index.html', 'popup.html', 'LICENSE',
-  ...[16, 32, 48, 128].map(size => `icons/icon-${size}.png`),
-  ...['app.js', 'api.js', 'styles.css', 'property.js', 'property.css', 'finance.js', 'scientific.js', 'tools.css']
-    .map(name => `src/${name}`),
-];
+function packageExtension() {
+  const extensionDir = buildExtension();
+  const staging = mkdtempSync(join(DIST, ".package-"));
+  const name = "property-desk-calc.zip";
+  try {
+    const archive = join(staging, name);
+    execFileSync("zip", ["-q", "-r", "-X", archive, "."], { cwd: extensionDir, stdio: "inherit" });
+    renameSync(archive, join(DIST, name));
+    console.log(`Created dist/${name}`);
+  } finally {
+    rmSync(staging, { recursive: true, force: true });
+  }
+}
 
-mkdirSync(dist, { recursive: true });
-const staging = mkdtempSync(join(dist, '.package-'));
 try {
-  const archive = join(staging, 'property-desk-calc.zip');
-  execFileSync('zip', ['-q', '-X', archive, ...files], { cwd: root, stdio: 'inherit' });
-  renameSync(archive, join(dist, 'property-desk-calc.zip'));
-  console.log('Created dist/property-desk-calc.zip');
-} finally {
-  rmSync(staging, { recursive: true, force: true });
+  packageExtension();
+} catch (error) {
+  console.error(error.code === "ENOENT" ? "Packaging requires the zip command and all extension files." : error.message);
+  process.exitCode = 1;
 }

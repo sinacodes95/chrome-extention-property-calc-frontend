@@ -1,6 +1,6 @@
 # Property Desk Calc
 
-Property Desk Calc is a Manifest V3 Chrome extension for the sibling [Rust calculator](../chrome-extention-calc-backend). Property analysis opens by default. The toolbar popup gives you quick access, and **Open in a tab** gives wide tables and longer sessions more room.
+Property Desk Calc is a Manifest V3 Chrome extension that bundles the sibling [Rust calculator](../chrome-extention-calc-backend) as WebAssembly. All calculations run offline in Chrome. The toolbar popup opens to property analysis, and **Open in a tab** gives wide tables and longer sessions more room.
 
 | Workspace | What you can do |
 | --- | --- |
@@ -12,7 +12,7 @@ Enter rates as percentages in the property and finance forms (for example, enter
 
 ## See a deal in action
 
-These screenshots follow the built-in example of a commercial property with a purchase price of 2,000,000. The local preview runs each calculation through the Rust backend.
+These screenshots follow the built-in example of a commercial property with a purchase price of 2,000,000. The extension and local preview use the same WebAssembly build of the Rust calculator.
 
 ### Underwrite the first year
 
@@ -39,50 +39,38 @@ Compare rent growth and exit cap rates in one grid. Across these nine scenarios,
 
 ![Fixed-rate loan calculator showing payment, remaining balance, and principal and interest paid after 12 payments](docs/screenshots/loan.png)
 
-**Scientific.** Type an expression or use the keypad and function picker. The calculation shown in degrees returns 126.5, matching the API example below.
+**Scientific.** Type an expression or use the keypad and function picker. The calculation shown in degrees returns 126.5, matching the example in the Rust calculator README.
 
 ![Scientific calculator showing an expression in degrees, its result of 126.5, and the available functions](docs/screenshots/scientific.png)
 
 </details>
 
-## Load your own version of the extension
+## Install in Chrome
 
-I'll share the infrastructure code (written in cloud-formation) next, if I forget to come back here and link it then look at the repositories on my github you should be able to find it there. Alternatively, shout my name out in the streets and if I'm close enough to hear you the I'll should back the URL for the infrastructure repo :D. 
+If you already have `property-desk-calc.zip`, extract it and use the extracted directory in the steps below. To build your own copy, check out this repository and `chrome-extention-calc-backend` side by side. Install Node.js 20 or later and stable Rust via rustup. From the frontend checkout, run:
 
-1. Open `chrome://extensions`, turn on **Developer mode**, then click **Load unpacked** and select this repository.
-2. Open **Property Desk Calc** from Chrome's Extensions menu. Click **Set up connection** and enter the full HTTPS URL for the API Gateway POST route.
-3. Save and approve Chrome's access prompt for that host. Use **Test connection** to verify that the route returns the expected result.
+```sh
+rustup target add wasm32-unknown-unknown
+npm run build
+```
 
-The extension needs no build step. The AWS endpoint is not deployed by this repository. With no endpoint, the installed extension can be explored but cannot calculate.
+1. Open `chrome://extensions` and turn on **Developer mode**.
+2. Click **Load unpacked** and select `dist/property-desk-calc` (or the extracted directory that contains `manifest.json`).
+3. Open **Property Desk Calc** from Chrome’s Extensions menu. The calculator is ready to use offline.
 
-## Develop against the real Rust calculator
+The packaged extension only requests Chrome’s storage permission for session drafts. It has no external host permissions and makes no calls to a server.
 
-Use Node.js 20 or later. If the Rust CLI is not already built, run `cargo build --locked` in the backend repository.
+## Package for the Chrome Web Store
+
+Run `npm run package` from the frontend checkout with the `zip` command available. Follow the [Chrome Web Store publishing instructions](https://developer.chrome.com/docs/webstore/publish) to upload `dist/property-desk-calc.zip`. The ZIP contains the manifest at its root, the UI, and the compiled Wasm. A machine installing the extension does not need Rust or Node.js.
+
+## Develop and test
 
 ```sh
 npm run dev
 npm test
 ```
 
-Open [the local preview](http://127.0.0.1:4173/), or use [popup dimensions](http://127.0.0.1:4173/?mode=popup). The server starts on loopback and sends calculation requests to the existing Rust CLI. It looks for the sibling debug binary by default; set `CALCULATOR_BIN` to use another build. Set `CALCULATOR_DEV_PORT` to change the port. The API contract tests run against the CLI when it is available.
+Open [the local preview](http://127.0.0.1:4173/), or preview [the popup layout](http://127.0.0.1:4173/popup.html). The preview server only serves the built files; calculations run in the browser. Restart the preview to rebuild after editing source. Set `CALCULATOR_DEV_PORT` to use a different preview port or `CALCULATOR_BACKEND_DIR` to point the build at a different checkout of the Rust calculator.
 
-Use `npm run package` on a machine with the `zip` command to make `dist/property-desk-calc.zip`. The archive contains the runtime files and license.
-
-## API Gateway contract for the AWS Lambda function
-
-Expose one HTTPS POST route. Property Desk Calc sends the Rust request as the JSON body, including its `operation` tag. For example:
-
-```json
-{"operation":"evaluate","expression":"sin(30) + log(64, 2) + 5!","angle_mode":"degrees"}
-```
-
-The Lambda should pass the decoded event body to `rust_calculator::calculate_json` and return the resulting string as the proxy response's `body`, with `Content-Type: application/json` and `isBase64Encoded: false`. API Gateway forwards that body to the extension. The client expects one of the Rust envelopes, directly in the HTTP response:
-
-```json
-{"ok":true,"result":{"value":126.5}}
-{"ok":false,"error":{"code":"domain","message":"…"}}
-```
-
-Use a 2xx status for successful results; structured calculator errors can use 4xx. Keep the backend's 64 KiB request limit and preserve `null` ratios and IRRs and per-scenario errors. See the [API Gateway Lambda proxy response format](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html#http-api-develop-integrations-lambda.response) and [Chrome's host access model](https://developer.chrome.com/docs/extensions/develop/concepts/network-requests).
-
-The extension posts inputs only to the URL you configure. It requests access to that HTTPS host on save, saves the URL on the device, and sends no AWS credentials, cookies or API keys. The route must accept this client as configured; if it requires authentication, implement a client sign-in flow before deploying it for those users. Do not put AWS secrets in extension files or in the endpoint URL.
+`npm test` builds the extension and exercises all seven operations through the bundled Wasm. Run `cargo test --locked` in the backend checkout to test the Rust calculator separately.

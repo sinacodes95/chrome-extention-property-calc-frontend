@@ -2,10 +2,12 @@
   "manifest_version": 3,
   "name": "Property Desk Calc",
   "description": "Underwrite property, project returns, and run financial and scientific calculations.",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "minimum_chrome_version": "102",
   "permissions": ["storage"],
-  "optional_host_permissions": ["https://*/*"],
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; connect-src 'self'; base-uri 'none'"
+  },
   "action": {
     "default_title": "Property Desk Calc",
     "default_popup": "popup.html",
@@ -19,9 +21,5 @@
     "32": "icons/icon-32.png",
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
-  },
-  "options_ui": {
-    "page": "index.html#settings",
-    "open_in_tab": true
   }
 }

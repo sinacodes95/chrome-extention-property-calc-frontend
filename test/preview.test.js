@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
-import { Readable } from "node:stream";
 import { test } from "node:test";
-import { calculatorBinary, createDevHandler } from "../scripts/dev.mjs";
-import { calculate, getEndpoint, isExtension } from "../src/api.js";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { pathToFileURL } from "node:url";
+import { EXTENSION_DIR } from "../scripts/build.mjs";
+import { createDevHandler } from "../scripts/dev.mjs";
 
 const property = {
   purchase_price: 2_000_000,
@@ -34,15 +36,15 @@ function near(actual, expected, tolerance = 1e-8) {
   assert.ok(Math.abs(actual - expected) < tolerance, `Expected ${expected}, received ${actual}`);
 }
 
-// Use the real HTTP handler in-process so this also runs in network-restricted environments.
-function handlerFetch(address, handle) {
-  return async (url, options) => {
-    const request = Object.assign(Readable.from([Buffer.from(options.body ?? "")]), {
-      url: new URL(url, address).pathname,
-      method: options.method ?? "GET",
-      headers: { host: address.host, ...Object.fromEntries(new Headers(options.headers)) },
-      socket: { localPort: Number(address.port) },
-    });
+// Exercise the static preview's real responses without opening a socket.
+function previewFetch(handle) {
+  return async (path, method = "GET") => {
+    const request = {
+      url: path,
+      method,
+      headers: { host: "127.0.0.1:4173" },
+      socket: { localPort: 4173 },
+    };
     const headers = new Headers();
     let status;
     let body;
@@ -58,21 +60,37 @@ function handlerFetch(address, handle) {
   };
 }
 
-const binary = calculatorBinary();
-test("preview calculates all seven operations through the real Rust executable", {
-  skip: binary ? false : "Build the sibling Rust backend or set CALCULATOR_BIN.",
-}, async (t) => {
-  const address = new URL("http://127.0.0.1:4173");
-  const originalFetch = globalThis.fetch;
-  globalThis.location = address;
-  globalThis.fetch = handlerFetch(address, createDevHandler(binary));
-  t.after(() => {
-    globalThis.fetch = originalFetch;
-    delete globalThis.location;
-  });
+test("the build packages Wasm for the extension and the static preview", async () => {
+  const manifest = JSON.parse(await readFile(join(EXTENSION_DIR, "manifest.json"), "utf8"));
+  assert.equal(manifest.manifest_version, 3);
+  assert.deepEqual(manifest.permissions, ["storage"]);
+  assert.equal(manifest.host_permissions, undefined);
+  assert.equal(manifest.optional_host_permissions, undefined);
+  const preview = previewFetch(createDevHandler());
+  const page = await preview("/popup.html");
+  assert.equal(page.status, 200);
+  assert.match(page.headers.get("content-security-policy"), /script-src 'self' 'wasm-unsafe-eval'/);
+  assert.match(page.headers.get("content-security-policy"), /connect-src 'self'/);
+  const wasm = await preview("/src/rust_calculator.wasm");
+  assert.equal(wasm.status, 200);
+  assert.equal(wasm.headers.get("content-type"), "application/wasm");
+  const module = await WebAssembly.compile(await wasm.arrayBuffer());
+  assert.deepEqual(WebAssembly.Module.imports(module), []);
+  assert.equal((await preview("/api/calculate")).status, 404);
+  assert.equal((await preview("/api/calculate", "POST")).status, 405);
+});
 
-  assert.equal(isExtension, false);
-  assert.equal(await getEndpoint(), "/api/calculate");
+test("the bundled client calculates all seven operations through Rust WebAssembly", async (t) => {
+  const api = pathToFileURL(join(EXTENSION_DIR, "src", "api.js"));
+  const asset = new URL("rust_calculator.wasm", api);
+  const preview = previewFetch(createDevHandler());
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (url) => {
+    assert.equal(String(url), asset.href);
+    return preview("/src/rust_calculator.wasm");
+  };
+  t.after(() => { globalThis.fetch = originalFetch; });
+  const { calculate } = await import(api);
 
   const expression = "sin(30) + log(64, 2) + 5!";
   assert.equal((await calculate({ operation: "evaluate", expression, angle_mode: "degrees" })).value, 126.5);
@@ -109,11 +127,4 @@ test("preview calculates all seven operations through the real Rust executable",
   assert.equal(grid.scenarios[1].error.code, "invalid_input");
   assert.match(grid.scenarios[1].error.message, /exit_cap_rate/);
   assert.equal(grid.scenarios[2].annual_rent_growth, 0.04);
-
-  const offOrigin = await fetch("/api/calculate", {
-    method: "POST",
-    headers: { Origin: "https://example.com", "Content-Type": "application/json" },
-    body: "{}",
-  });
-  assert.equal(offOrigin.status, 403);
 });
